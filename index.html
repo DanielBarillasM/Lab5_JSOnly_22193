@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body>
+    <script type="application/javascript">
+      // --------------------------------------------------------------
+      //  1. Estilos globales, animaciones y estilos de error
+      // --------------------------------------------------------------
+      const styleTag = document.createElement('style');
+      styleTag.textContent = `
+        html, body {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          height: 100%;
+          font-family: Arial, sans-serif;
+        }
+        /* Fondo animado (modo claro) */
+        @keyframes gradientAnimationLight {
+          0%   { background-position: 0% 50%; }
+          50%  { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        /* Fondo animado (modo oscuro) */
+        @keyframes gradientAnimationDark {
+          0%   { background-position: 100% 50%; }
+          50%  { background-position: 0% 50%; }
+          100% { background-position: 100% 50%; }
+        }
+        /* Animación de aparición (fade + slide) */
+        @keyframes fadeSlideIn {
+          0%   { opacity: 0; transform: translateY(-20px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        /* Animación de parpadeo para el mensaje de error */
+        @keyframes blink {
+          0% { opacity: 1; }
+          50% { opacity: 0; }
+          100% { opacity: 1; }
+        }
+        .errorMessage {
+          text-align: center;
+          font-size: 18px;
+          color: red;
+          animation: blink 1s infinite;
+          margin: 20px;
+        }
+        /* Hover de botones (ligero zoom) */
+        button:hover {
+          transform: scale(1.05);
+          transition: transform 0.2s;
+        }
+      `;
+      document.head.appendChild(styleTag);
+
+      // Agregar FontAwesome para iconos
+      const faLink = document.createElement('link');
+      faLink.rel = 'stylesheet';
+      faLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css';
+      document.head.appendChild(faLink);
+
+      // -----------------------------------------
+      //  2. Contenedor principal (flex)
+      // -----------------------------------------
+      const mainContainer = document.createElement('div');
+      mainContainer.style.display = 'flex';
+      mainContainer.style.alignItems = 'center';
+      mainContainer.style.justifyContent = 'center';
+      mainContainer.style.width = '100%';
+      mainContainer.style.height = '100%';
+      document.body.appendChild(mainContainer);
+
+      // -----------------------------------------
+      //  3. Verificar usuario en localStorage
+      // -----------------------------------------
+      let usuario = localStorage.getItem('usuario');
+
+      // -----------------------------------------
+      //  4. Mostrar Login si no hay usuario
+      // -----------------------------------------
+      function mostrarLogin() {
+        const loginContainer = document.createElement('div');
+        loginContainer.style.display = 'flex';
+        loginContainer.style.flexDirection = 'column';
+        loginContainer.style.alignItems = 'center';
+        loginContainer.style.justifyContent = 'center';
+        loginContainer.style.width = '350px';
+        loginContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.85)';
+        loginContainer.style.backdropFilter = 'blur(5px)';
+        loginContainer.style.borderRadius = '10px';
+        loginContainer.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.2)';
+        loginContainer.style.padding = '30px';
+        loginContainer.style.animation = 'fadeSlideIn 0.8s forwards';
+
+        const loginTitle = document.createElement('h1');
+        loginTitle.textContent = 'Bienvenido a DevNG Chat';
+        loginTitle.style.marginBottom = '10px';
+        loginContainer.appendChild(loginTitle);
+
+        const loginSubtitle = document.createElement('p');
+        loginSubtitle.textContent = 'Ingresa tu nombre de usuario';
+        loginSubtitle.style.marginBottom = '20px';
+        loginContainer.appendChild(loginSubtitle);
+
+        const userInput = document.createElement('textarea');
+        userInput.setAttribute('rows', '1');
+        userInput.setAttribute('cols', '30');
+        userInput.style.borderRadius = '8px';
+        userInput.style.fontSize = '16px';
+        userInput.style.padding = '10px';
+        userInput.style.resize = 'none';
+        userInput.style.marginBottom = '10px';
+        userInput.setAttribute('placeholder', 'Ej: Pepe, Ana, etc.');
+        loginContainer.appendChild(userInput);
+
+        const loginButton = document.createElement('button');
+        loginButton.textContent = 'Ingresar';
+        loginButton.style.borderRadius = '20px';
+        loginButton.style.fontSize = '16px';
+        loginButton.style.padding = '10px 20px';
+        loginButton.style.backgroundColor = '#0077cc';
+        loginButton.style.color = 'white';
+        loginButton.style.border = 'none';
+        loginButton.style.cursor = 'pointer';
+        loginContainer.appendChild(loginButton);
+
+        loginButton.addEventListener('click', () => {
+          const nombreUsuario = userInput.value.trim();
+          if (nombreUsuario !== '') {
+            localStorage.setItem('usuario', nombreUsuario);
+            mainContainer.removeChild(loginContainer);
+            mostrarChat(nombreUsuario);
+          }
+        });
+
+        mainContainer.appendChild(loginContainer);
+      }
+
+      // -----------------------------------------
+      //  5. Mostrar Chat
+      // -----------------------------------------
+      function mostrarChat(nombre) {
+        const chatContainer = document.createElement('div');
+        chatContainer.style.display = 'flex';
+        chatContainer.style.flexDirection = 'column';
+        chatContainer.style.width = '90%';
+        chatContainer.style.maxWidth = '900px';
+        chatContainer.style.height = '80vh';
+        chatContainer.style.maxHeight = '700px';
+        chatContainer.style.borderRadius = '10px';
+        chatContainer.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.2)';
+        chatContainer.style.animation = 'fadeSlideIn 0.8s forwards';
+        mainContainer.appendChild(chatContainer);
+
+        // ------------- Header -------------
+        const header = document.createElement('div');
+        header.style.padding = '15px';
+        header.style.display = 'flex';
+        header.style.alignItems = 'center';
+        header.style.borderTopLeftRadius = '10px';
+        header.style.borderTopRightRadius = '10px';
+        header.style.color = '#ffffff';
+        chatContainer.appendChild(header);
+
+        const headerTitle = document.createElement('h2');
+        headerTitle.textContent = 'Chat de DevNG';
+        headerTitle.style.margin = '0';
+        header.appendChild(headerTitle);
+
+        const headerUser = document.createElement('span');
+        headerUser.textContent = ` - Usuario: ${nombre}`;
+        headerUser.style.marginLeft = '20px';
+        headerUser.style.fontSize = '16px';
+        header.appendChild(headerUser);
+
+        // -----------------------------------------
+        // Botón de tema
+        // -----------------------------------------
+        const themeButton = document.createElement('button');
+        themeButton.style.marginLeft = 'auto';
+        themeButton.style.borderRadius = '50%';
+        themeButton.style.fontSize = '24px';
+        themeButton.style.border = 'none';
+        themeButton.style.backgroundColor = 'transparent';
+        themeButton.style.cursor = 'pointer';
+        const themeIcon = document.createElement('i');
+        themeIcon.className = 'fa-solid fa-circle-half-stroke';
+        themeButton.appendChild(themeIcon);
+        header.appendChild(themeButton);
+
+        // -----------------------------------------
+        // Botón para cambiar usuario
+        // -----------------------------------------
+        const changeUserButton = document.createElement('button');
+        changeUserButton.textContent = 'Cambiar usuario';
+        changeUserButton.style.marginLeft = '15px';
+        changeUserButton.style.borderRadius = '8px';
+        changeUserButton.style.fontSize = '14px';
+        changeUserButton.style.padding = '5px 10px';
+        changeUserButton.style.backgroundColor = '#dc3545';
+        changeUserButton.style.color = 'white';
+        changeUserButton.style.border = 'none';
+        changeUserButton.style.cursor = 'pointer';
+        header.appendChild(changeUserButton);
+
+        changeUserButton.addEventListener('click', () => {
+          localStorage.removeItem('usuario');
+          location.reload();
+        });
+
+        // ------------- Contenedor de mensajes -------------
+        const messagesContainer = document.createElement('div');
+        messagesContainer.style.flex = '1';
+        messagesContainer.style.overflowY = 'auto';
+        messagesContainer.style.padding = '15px';
+        chatContainer.appendChild(messagesContainer);
+
+        const messagesList = document.createElement('ul');
+        messagesList.style.listStyle = 'none';
+        messagesList.style.padding = '0';
+        messagesContainer.appendChild(messagesList);
+
+        // ------------- Contenedor para enviar mensajes -------------
+        const sendContainer = document.createElement('div');
+        sendContainer.style.display = 'flex';
+        sendContainer.style.alignItems = 'center';
+        sendContainer.style.padding = '15px';
+        sendContainer.style.borderTop = '1px solid #ddd';
+        sendContainer.style.backgroundColor = 'rgba(249, 249, 249, 0.95)';
+        chatContainer.appendChild(sendContainer);
+
+        // -----------------------------------------
+        // Textarea para mensaje de texto
+        // -----------------------------------------
+        const messageInput = document.createElement('textarea');
+        messageInput.setAttribute('rows', '2');
+        messageInput.setAttribute('cols', '60');
+        messageInput.style.borderRadius = '8px';
+        messageInput.style.fontSize = '16px';
+        messageInput.style.resize = 'none';
+        messageInput.style.padding = '10px';
+        messageInput.setAttribute('placeholder', 'Escriba su mensaje (máximo 140 caracteres)');
+        sendContainer.appendChild(messageInput);
+
+        // -----------------------------------------
+        // Botón para enviar texto
+        // -----------------------------------------
+        const sendButton = document.createElement('button');
+        sendButton.style.marginLeft = '10px';
+        sendButton.style.borderRadius = '8px';
+        sendButton.style.fontSize = '16px';
+        sendButton.style.backgroundColor = '#28a745';
+        sendButton.style.color = 'white';
+        sendButton.style.border = 'none';
+        sendButton.style.cursor = 'pointer';
+        const sendIcon = document.createElement('i');
+        sendIcon.className = 'fa-solid fa-paper-plane';
+        sendButton.appendChild(sendIcon);
+        sendContainer.appendChild(sendButton);
+
+        // -----------------------------------------
+        // Botón para subir imagen
+        // -----------------------------------------
+        const uploadButton = document.createElement('button');
+        uploadButton.style.marginLeft = '10px';
+        uploadButton.style.borderRadius = '8px';
+        uploadButton.style.fontSize = '16px';
+        uploadButton.style.backgroundColor = '#ffc107';
+        uploadButton.style.color = 'white';
+        uploadButton.style.border = 'none';
+        uploadButton.style.cursor = 'pointer';
+        const uploadIcon = document.createElement('i');
+        uploadIcon.className = 'fa-solid fa-image';
+        uploadButton.appendChild(uploadIcon);
+        sendContainer.appendChild(uploadButton);
+
+        // -----------------------------------------
+        // Input file oculto (solo JPEG)
+        // -----------------------------------------
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/jpeg';
+        fileInput.style.display = 'none';
+        sendContainer.appendChild(fileInput);
+
+        // -------------------------------------------------------
+        // Contador de caracteres para el mensaje de texto
+        // -------------------------------------------------------
+        const charCount = document.createElement('p');
+        charCount.style.margin = '5px 10px';
+        charCount.style.fontSize = '14px';
+        sendContainer.appendChild(charCount);
+
+        // -------------------------------------------------------
+        //  6. Límite de caracteres para mensajes de texto
+        // -------------------------------------------------------
+        const maxChars = 140;
+        const countChars = (text) => text.length;
+        messageInput.addEventListener('input', () => {
+          const count = countChars(messageInput.value);
+          charCount.textContent = `${count}/${maxChars} caracteres`;
+          if (count > maxChars) {
+            messageInput.value = messageInput.value.slice(0, maxChars);
+            charCount.textContent = `${maxChars}/${maxChars} (límite alcanzado)`;
+            sendButton.disabled = true;
+          } else {
+            sendButton.disabled = false;
+          }
+        });
+
+        // -------------------------------------------------------
+        // Función para mostrar error en el centro del chat
+        // -------------------------------------------------------
+        function showErrorMessage(text) {
+          // Limpiar mensajes actuales y mostrar mensaje de error intermitente
+          messagesContainer.innerHTML = "";
+          const errorDiv = document.createElement('div');
+          errorDiv.className = 'errorMessage';
+          errorDiv.textContent = text;
+          messagesContainer.appendChild(errorDiv);
+        }
+
+        // -----------------------------------------
+        //  7. Obtener y mostrar mensajes
+        // -----------------------------------------
+        let mensajesMostrados = [];
+
+        async function getMessages() {
+          try {
+            const response = await fetch('https://chat.devng.online/chats');
+            if (!response.ok) throw new Error('Error al obtener mensajes');
+            const messages = (await response.json()).reverse();
+
+            // Revisar si el scroll está al final
+            const isScrolledToBottom =
+              messagesContainer.scrollHeight - messagesContainer.clientHeight <= messagesContainer.scrollTop + 1;
+
+            messages.forEach(({ id, username, message }) => {
+              if (!mensajesMostrados.includes(id)) {
+                const li = document.createElement('li');
+                li.style.padding = '10px';
+                li.style.marginBottom = '10px';
+                li.style.borderRadius = '6px';
+                li.style.opacity = '0';
+                li.style.transform = 'translateY(20px)';
+                li.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+
+                // Detectar imágenes (link o data URL) permitiendo solo JPEG,
+                // usando toLowerCase() para asegurar coincidencias en la URL
+                if (
+                  (message.startsWith('https://') &&
+                   (message.toLowerCase().includes('.jpeg'))) ||
+                  message.startsWith('data:image')
+                ) {
+                  li.textContent = `${username}: `;
+                  li.appendChild(document.createElement('br'));
+                  const img = document.createElement('img');
+                  img.src = message;
+                  img.style.maxWidth = '220px';
+                  img.onerror = () => {
+                    img.src = 'https://via.placeholder.com/150?text=Imagen+no+disponible';
+                    img.alt = 'Imagen no disponible';
+                  };
+                  li.appendChild(img);
+                }
+                // Detección de links a páginas con <object>
+                else if (message.startsWith('https://')) {
+                  li.textContent = `${username}: `;
+                  li.appendChild(document.createElement('br'));
+
+                  const linkObject = document.createElement('object');
+                  linkObject.width = '350';
+                  linkObject.height = '350';
+                  linkObject.data = message;  // La URL
+                  linkObject.type = 'text/html';
+                  linkObject.onerror = () => {
+                    // Opcional: manejar error de preview
+                  };
+                  li.appendChild(linkObject);
+                }
+                // Mensaje de texto normal
+                else {
+                  li.textContent = `${username}: ${message}`;
+                }
+
+                // -----------------------------------------
+                // Ajustar color según tema
+                // -----------------------------------------
+                const darkModeEnabled = localStorage.getItem('darkModeEnabled') === 'true';
+                if (darkModeEnabled) {
+                  li.style.backgroundColor = '#2e2e2e';
+                  li.style.color = '#f0f0f0';
+                } else {
+                  li.style.backgroundColor = '#e8f4ff';
+                  li.style.color = '#333';
+                }
+
+                messagesList.appendChild(li);
+                mensajesMostrados.push(id);
+
+                // -----------------------------------------
+                // Animación de aparición
+                // -----------------------------------------
+                setTimeout(() => {
+                  li.style.opacity = '1';
+                  li.style.transform = 'translateY(0)';
+                }, 10);
+              }
+            });
+
+            if (isScrolledToBottom) {
+              messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+          } catch (error) {
+            console.error('Error al obtener mensajes:', error);
+            showErrorMessage('Error: No se pudo conectar al servidor. Verifica tu conexión o intenta más tarde.');
+          }
+        }
+
+        // -----------------------------------------
+        //  8. Enviar mensajes de texto
+        // -----------------------------------------
+        async function sendMessage() {
+          const body = {
+            username: nombre,
+            message: messageInput.value.trim()
+          };
+          if (!body.message) return;
+          try {
+            const response = await fetch('https://chat.devng.online/chats', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body)
+            });
+            const { ok } = response;
+            if (ok) {
+              messageInput.value = '';
+              charCount.textContent = `0/${maxChars} caracteres`;
+            } else {
+              throw new Error('Error al enviar mensaje.');
+            }
+          } catch (error) {
+            console.error('Error al enviar mensaje:', error);
+            showErrorMessage('Error: No se pudo enviar el mensaje. Verifica tu conexión o intenta más tarde.');
+          }
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+
+        // Enviar con Enter para mensajes de texto
+        messageInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            if (countChars(messageInput.value) <= maxChars) {
+              sendMessage();
+            }
+          }
+        });
+
+        // -----------------------------------------
+        //  8.b Enviar imagen (data URL)
+        // -----------------------------------------
+        async function sendImage(imageDataURL) {
+          const body = {
+            username: nombre,
+            message: imageDataURL
+          };
+          try {
+            const response = await fetch('https://chat.devng.online/chats', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body)
+            });
+            const { ok } = response;
+            if (ok) {
+              fileInput.value = "";
+            } else {
+              throw new Error('Error al enviar imagen.');
+            }
+          } catch (error) {
+            console.error('Error al enviar imagen:', error);
+            showErrorMessage('Error: No se pudo enviar la imagen. Verifica tu conexión o intenta más tarde.');
+          }
+        }
+
+        // -----------------------------------------
+        // Subir imagen
+        // -----------------------------------------
+        uploadButton.addEventListener('click', () => {
+          fileInput.click();
+        });
+        fileInput.addEventListener('change', () => {
+          const file = fileInput.files[0];
+          if (file) {
+            // Verificar tamaño máximo (1 MB)
+            const maxSize = 1 * 1024 * 1024; // 1 MB en bytes
+            if (file.size > maxSize) {
+              alert('La imagen es demasiado grande. Por favor, use una imagen de menos de 1 MB.');
+              fileInput.value = "";
+              return;
+            }
+            // Solo se permiten archivos JPEG (MIME "image/jpeg")
+            if (file.type === 'image/jpeg') {
+              const reader = new FileReader();
+              reader.onload = function(e) {
+                const imageDataURL = e.target.result;
+                sendImage(imageDataURL);
+              };
+              reader.readAsDataURL(file);
+            } else {
+              alert('Solo se permiten archivos JPEG.');
+            }
+          }
+        });
+
+        // -----------------------------------------
+        //  10. Auto-refresh cada 5 segundos
+        // -----------------------------------------
+        setInterval(getMessages, 5000);
+        getMessages();
+
+        // -----------------------------------------
+        //  11. Modo claro/oscuro
+        // -----------------------------------------
+        let darkModeEnabled = localStorage.getItem('darkModeEnabled') === 'true';
+
+        function applyTheme() {
+          if (darkModeEnabled) {
+            document.body.style.background = 'linear-gradient(-45deg, #141E30, #243B55)';
+            document.body.style.backgroundSize = '400% 400%';
+            document.body.style.animation = 'gradientAnimationDark 15s ease infinite';
+            chatContainer.style.backgroundColor = '#1e1e1e';
+            header.style.backgroundColor = '#333';
+            themeIcon.style.color = '#f0f0f0';
+            messagesContainer.style.backgroundColor = '#2c2c2c';
+          } else {
+            document.body.style.background = 'linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab)';
+            document.body.style.backgroundSize = '400% 400%';
+            document.body.style.animation = 'gradientAnimationLight 15s ease infinite';
+            chatContainer.style.backgroundColor = '#ffffff';
+            header.style.backgroundColor = '#0077cc';
+            themeIcon.style.color = '#ffffff';
+            messagesContainer.style.backgroundColor = 'rgba(240, 248, 255, 0.9)';
+          }
+          const lis = messagesList.querySelectorAll('li');
+          lis.forEach(li => {
+            if (darkModeEnabled) {
+              li.style.backgroundColor = '#2e2e2e';
+              li.style.color = '#f0f0f0';
+            } else {
+              li.style.backgroundColor = '#e8f4ff';
+              li.style.color = '#333';
+            }
+          });
+        }
+
+        applyTheme();
+
+        themeButton.addEventListener('click', () => {
+          darkModeEnabled = !darkModeEnabled;
+          localStorage.setItem('darkModeEnabled', darkModeEnabled);
+          applyTheme();
+        });
+
+        // --------------------------------------------
+        // Agregar enlace a GitHub al final del chat
+        // --------------------------------------------
+        const githubLink = document.createElement('a');
+        githubLink.href = 'https://github.com/DanielBarillasM/Lab5_JSOnly_22193.git';
+        githubLink.textContent = 'Ver repositorio en GitHub';
+        githubLink.target = '_blank';
+        githubLink.style.display = 'block';
+        githubLink.style.textAlign = 'center';
+        githubLink.style.marginTop = '10px';
+        githubLink.style.fontSize = '14px';
+        githubLink.style.color = darkModeEnabled ? '#f0f0f0' : '#0077cc';
+        chatContainer.appendChild(githubLink);
+      }
+
+      // -----------------------------------------
+      //  12. Lógica de inicio
+      // -----------------------------------------
+      if (usuario) {
+        mostrarChat(usuario);
+      } else {
+        mostrarLogin();
+      }
+    </script>
+  </body>
+</html>
